@@ -28,7 +28,14 @@ from datetime import datetime
 import logging
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('logs/eda_execution.log'),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger(__name__)
 
 # Suppress warnings for cleaner output
@@ -55,9 +62,15 @@ class SyntheaEDA:
         self.covid_patients = None
         self.eda_results = {}
         
-        # Create output directory for plots
-        self.output_dir = Path("eda_results")
-        self.output_dir.mkdir(exist_ok=True)
+        # Create output directories according to project structure
+        self.outputs_dir = Path("outputs")
+        self.plots_dir = Path("plots")
+        self.logs_dir = Path("logs")
+        
+        # Create directories if they don't exist
+        self.outputs_dir.mkdir(exist_ok=True)
+        self.plots_dir.mkdir(exist_ok=True)
+        self.logs_dir.mkdir(exist_ok=True)
         
         logger.info(f"Initialized EDA for data path: {data_path}")
     
@@ -162,7 +175,7 @@ class SyntheaEDA:
         axes[1, 1].set_xticklabels(ethnicity_counts.index, rotation=45)
         
         plt.tight_layout()
-        plt.savefig(self.output_dir / 'patient_demographics.png', dpi=300, bbox_inches='tight')
+        plt.savefig(self.plots_dir / 'patient_demographics.png', dpi=300, bbox_inches='tight')
         plt.show()
         
         self.eda_results['demographics'] = demographics
@@ -199,7 +212,7 @@ class SyntheaEDA:
         plt.title('Top 15 COVID-19 Related Conditions')
         plt.gca().invert_yaxis()
         plt.tight_layout()
-        plt.savefig(self.output_dir / 'covid_conditions.png', dpi=300, bbox_inches='tight')
+        plt.savefig(self.plots_dir / 'covid_conditions.png', dpi=300, bbox_inches='tight')
         plt.show()
         
         self.eda_results['covid_conditions'] = condition_analysis
@@ -242,7 +255,7 @@ class SyntheaEDA:
         plt.title('Top 15 COVID-19 Related Medications')
         plt.gca().invert_yaxis()
         plt.tight_layout()
-        plt.savefig(self.output_dir / 'covid_medications.png', dpi=300, bbox_inches='tight')
+        plt.savefig(self.plots_dir / 'covid_medications.png', dpi=300, bbox_inches='tight')
         plt.show()
         
         self.eda_results['medications'] = medication_analysis
@@ -285,7 +298,7 @@ class SyntheaEDA:
         plt.title('Top 15 Clinical Observations')
         plt.gca().invert_yaxis()
         plt.tight_layout()
-        plt.savefig(self.output_dir / 'clinical_observations.png', dpi=300, bbox_inches='tight')
+        plt.savefig(self.plots_dir / 'clinical_observations.png', dpi=300, bbox_inches='tight')
         plt.show()
         
         self.eda_results['observations'] = observation_analysis
@@ -331,7 +344,7 @@ class SyntheaEDA:
             plt.ylabel('Number of Encounters')
             plt.xticks(rotation=45)
             plt.tight_layout()
-            plt.savefig(self.output_dir / 'temporal_patterns.png', dpi=300, bbox_inches='tight')
+            plt.savefig(self.plots_dir / 'temporal_patterns.png', dpi=300, bbox_inches='tight')
             plt.show()
             
             temporal_analysis['monthly_encounters'] = monthly_encounters.to_dict()
@@ -385,7 +398,7 @@ class SyntheaEDA:
             plt.ylabel('Missing %')
             
             plt.tight_layout()
-            plt.savefig(self.output_dir / 'data_quality.png', dpi=300, bbox_inches='tight')
+            plt.savefig(self.plots_dir / 'data_quality.png', dpi=300, bbox_inches='tight')
             plt.show()
         
         self.eda_results['data_quality'] = quality_analysis
@@ -419,7 +432,7 @@ class SyntheaEDA:
                 return obj
         
         # Save report to JSON
-        with open(self.output_dir / 'eda_summary_report.json', 'w') as f:
+        with open(self.outputs_dir / 'eda_summary_report.json', 'w') as f:
             json.dump(convert_periods(report), f, indent=2, default=str)
         
         # Print summary
@@ -428,7 +441,9 @@ class SyntheaEDA:
         print("="*60)
         print(f"Total Tables Loaded: {len(self.tables)}")
         print(f"COVID-19 Patients Identified: {len(self.covid_patients) if self.covid_patients is not None else 0}")
-        print(f"Analysis Results Saved to: {self.output_dir}")
+        print(f"Analysis Results Saved to: {self.outputs_dir}")
+        print(f"Plots Saved to: {self.plots_dir}")
+        print(f"Logs Saved to: {self.logs_dir}")
         print("="*60)
         
         # Print key insights
@@ -499,7 +514,9 @@ def main():
     results = eda.run_complete_eda()
     
     print("\n✅ EDA completed successfully!")
-    print(f"📁 Results saved to: {eda.output_dir}")
+    print(f"📁 Results saved to: {eda.outputs_dir}")
+    print(f"📊 Plots saved to: {eda.plots_dir}")
+    print(f"📝 Logs saved to: {eda.logs_dir}")
     print("📊 Check the generated plots and summary report for insights")
 
 
