@@ -61,6 +61,33 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Temporary and debug files
+debug_*.py
+test_*.py
+*_test.py
+*_debug.py
+end_to_end_test.py
+optimize_pipeline.py
+performance_comparison.py
+train_*_fixed.py
+train_*_sample.py
+train_*_demo.py
+train_*_12000.py
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
 # Flask stuff:
 instance/
 .webassets-cache
