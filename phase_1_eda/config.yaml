@@ -1,0 +1,154 @@
+# Phase 1: Exploratory Data Analysis Configuration
+# ================================================
+
+# Data Configuration
+data:
+  # Path to Synthea CSV files
+  data_path: "10k_synthea_covid19_csv"
+  
+  # CSV files to analyze
+  csv_files:
+    - "patients.csv"
+    - "observations.csv"
+    - "medications.csv"
+    - "procedures.csv"
+    - "devices.csv"
+    - "encounters.csv"
+    - "conditions.csv"
+    - "careplans.csv"
+    - "immunizations.csv"
+    - "allergies.csv"
+    - "imaging_studies.csv"
+    - "organizations.csv"
+    - "providers.csv"
+    - "payers.csv"
+    - "payer_transitions.csv"
+    - "supplies.csv"
+
+# COVID-19 Analysis Configuration
+covid_analysis:
+  # Keywords to identify COVID-19 related conditions
+  covid_keywords:
+    - "covid"
+    - "coronavirus"
+    - "sars-cov-2"
+    - "covid-19"
+    - "sars"
+    - "corona"
+  
+  # Minimum number of COVID patients to analyze
+  min_covid_patients: 10
+  
+  # Sample size for detailed analysis (set to null for all data)
+  sample_size: null
+
+# Visualization Configuration
+visualization:
+  # Plot style
+  style: "seaborn-v0_8"
+  color_palette: "husl"
+  
+  # Figure sizes
+  figure_sizes:
+    demographics: [15, 12]
+    conditions: [12, 8]
+    medications: [12, 8]
+    observations: [12, 8]
+    temporal: [12, 6]
+    quality: [12, 8]
+  
+  # DPI for saved plots
+  dpi: 300
+  
+  # Save format
+  format: "png"
+
+# Analysis Configuration
+analysis:
+  # Demographics analysis
+  demographics:
+    age_bins: 20
+    include_geographic: false
+  
+  # Conditions analysis
+  conditions:
+    top_conditions_count: 20
+    min_condition_frequency: 5
+  
+  # Medications analysis
+  medications:
+    top_medications_count: 20
+    min_medication_frequency: 5
+  
+  # Observations analysis
+  observations:
+    top_observations_count: 20
+    min_observation_frequency: 5
+    include_vital_signs: true
+    include_lab_values: true
+  
+  # Temporal analysis
+  temporal:
+    time_period: "M"  # M for monthly, W for weekly, D for daily
+    min_encounters: 5
+  
+  # Data quality analysis
+  quality:
+    missing_threshold: 50  # Percentage threshold for missing data warning
+    outlier_threshold: 3   # Standard deviations for outlier detection
+
+# Output Configuration
+output:
+  # Output directory structure
+  directories:
+    outputs: "outputs"
+    plots: "plots"
+    logs: "logs"
+  
+  # File naming
+  files:
+    summary_report: "eda_summary_report.json"
+    quality_report: "data_quality_report.csv"
+    feature_analysis: "feature_analysis.csv"
+  
+  # Plot naming
+  plots:
+    demographics: "patient_demographics.png"
+    conditions: "covid_conditions.png"
+    medications: "covid_medications.png"
+    observations: "clinical_observations.png"
+    temporal: "temporal_patterns.png"
+    quality: "data_quality.png"
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(levelname)s - %(message)s"
+  file: "logs/eda_execution.log"
+
+# Performance Configuration
+performance:
+  # Memory management
+  chunk_size: 10000  # Process data in chunks for large datasets
+  
+  # Parallel processing
+  use_parallel: false
+  n_jobs: 1
+  
+  # Caching
+  use_cache: true
+  cache_dir: "cache"
+
+# Educational Configuration
+educational:
+  # Include detailed explanations in output
+  verbose_output: true
+  
+  # Include learning objectives in reports
+  include_learning_objectives: true
+  
+  # Include troubleshooting tips
+  include_troubleshooting: true
+  
+  # Save intermediate results for learning
+  save_intermediate: true 
