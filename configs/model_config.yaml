@@ -51,15 +51,14 @@ input:
     socioeconomic: 2  # healthcare_coverage, income_level
     other_static: 4  # additional static features
     
-  # Temporal Features (50 dimensions)
+  # Temporal Features (26 dimensions)
   temporal_features:
-    total_dimensions: 50
+    total_dimensions: 26
     vital_signs: 6  # temperature, heart_rate, bp_systolic, bp_diastolic, o2_sat, resp_rate
     laboratory_values: 8  # crp, d_dimer, wbc, platelets, lymphocytes, neutrophils, creatinine, troponin
     medications: 5  # remdesivir, dexamethasone, tocilizumab, supportive_care, anticoagulants
     procedures: 4  # intubation, mechanical_ventilation, diagnostic_tests, imaging_studies
     devices: 3  # ventilator_settings, monitoring_equipment, life_support
-    other_temporal: 24  # additional temporal features
 
 # Loss Function Configuration
 loss:

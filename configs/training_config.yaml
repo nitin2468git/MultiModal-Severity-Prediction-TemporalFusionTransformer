@@ -4,14 +4,21 @@
 # Training Parameters
 training:
   # Basic Training Settings
-  epochs: 100
-  batch_size: 32
+  epochs: 2  # Minimal epochs for testing
+  batch_size: 5  # Very small batch size for testing
   learning_rate: 0.001
   optimizer: "adamw"
-  scheduler: "cosine_annealing"
+  scheduler:
+    enabled: true
+    type: "cosine"
+    min_lr: 0.000001
   
   # Advanced Training Settings
-  gradient_clipping: 1.0
+  gradient_clipping:
+    enabled: true
+    type: "norm"
+    threshold: 1.0
+    adaptive: false
   mixed_precision: true
   accumulate_grad_batches: 1
   gradient_checkpointing: true
@@ -34,7 +41,7 @@ validation:
   
   # Cross-Validation
   cross_validation:
-    enabled: true
+    enabled: false  # Disabled for quick testing
     n_folds: 5
     split_type: "patient_level"
     stratification: true

@@ -135,8 +135,17 @@ class SyntheaLoader:
         """
         patient_data = {}
         
+        # Add patients table (uses 'Id' column)
+        if 'patients' in self.tables:
+            patients_df = self.tables['patients']
+            if 'Id' in patients_df.columns:
+                patient_data['patients'] = patients_df[
+                    patients_df['Id'] == patient_id
+                ].copy()
+        
+        # Add other tables (use 'PATIENT' column)
         for table_name, table_df in self.tables.items():
-            if 'PATIENT' in table_df.columns:
+            if table_name != 'patients' and 'PATIENT' in table_df.columns:
                 patient_data[table_name] = table_df[
                     table_df['PATIENT'] == patient_id
                 ].copy()
