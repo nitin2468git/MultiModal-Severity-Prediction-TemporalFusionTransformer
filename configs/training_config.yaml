@@ -1,0 +1,160 @@
+# Training Configuration for COVID-19 TFT Severity Prediction
+# Configuration file for training pipeline
+
+# Training Parameters
+training:
+  # Basic Training Settings
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+  optimizer: "adamw"
+  scheduler: "cosine_annealing"
+  
+  # Advanced Training Settings
+  gradient_clipping: 1.0
+  mixed_precision: true
+  accumulate_grad_batches: 1
+  gradient_checkpointing: true
+  
+  # Early Stopping
+  early_stopping:
+    enabled: true
+    patience: 15
+    monitor: "val_loss"
+    mode: "min"
+    min_delta: 0.001
+
+# Validation Strategy
+validation:
+  # Data Splitting
+  split_strategy: "temporal_split"
+  test_size: 0.1
+  validation_size: 0.15
+  random_state: 42
+  
+  # Cross-Validation
+  cross_validation:
+    enabled: true
+    n_folds: 5
+    split_type: "patient_level"
+    stratification: true
+    
+  # Temporal Split Settings
+  temporal_split:
+    split_date: "2023-01-01"  # Split data before this date
+    no_data_leakage: true
+    patient_level_split: true
+
+# Data Loading
+data_loading:
+  num_workers: 4
+  pin_memory: true
+  prefetch_factor: 2
+  persistent_workers: true
+  
+  # Data Augmentation
+  augmentation:
+    enabled: false
+    methods: []
+    
+  # Data Sampling
+  sampling:
+    class_balance: true
+    method: "weighted_sampling"
+    weights: [1.0, 2.0, 2.0, 1.5]  # For mortality, ICU, ventilator, LOS
+
+# Monitoring and Logging
+monitoring:
+  # Logging
+  log_every_n_steps: 50
+  log_learning_rate: true
+  log_gradients: false
+  log_attention_weights: true
+  
+  # Metrics Tracking
+  metrics:
+    - "auroc"
+    - "auprc"
+    - "calibration_error"
+    - "sensitivity"
+    - "specificity"
+    - "mae"
+    - "rmse"
+    
+  # Visualization
+  visualization:
+    enabled: true
+    attention_plots: true
+    prediction_plots: true
+    calibration_plots: true
+
+# Model Checkpointing
+checkpointing:
+  save_dir: "experiments/checkpoints"
+  save_best: true
+  save_last: true
+  save_top_k: 3
+  monitor: "val_loss"
+  mode: "min"
+  
+  # Model Loading
+  load_best: true
+  resume_from_checkpoint: null
+
+# Experiment Tracking
+experiment_tracking:
+  enabled: true
+  platform: "local"  # or "wandb", "mlflow", "tensorboard"
+  project_name: "covid19_tft_severity_prediction"
+  experiment_name: "tft_baseline"
+  
+  # Hyperparameter Logging
+  log_hyperparameters: true
+  log_environment: true
+  log_git_commit: true
+
+# Performance Optimization
+performance:
+  # Memory Management
+  memory_efficient: true
+  gradient_accumulation: 1
+  dynamic_batching: true
+  
+  # Hardware Optimization
+  use_gpu: true
+  gpu_memory_fraction: 0.9
+  cudnn_benchmark: true
+  deterministic: false
+
+# Evaluation Settings
+evaluation:
+  # Evaluation Frequency
+  eval_every_n_epochs: 1
+  eval_on_train: false
+  
+  # Statistical Analysis
+  statistical_analysis:
+    confidence_intervals: true
+    bootstrap_samples: 1000
+    significance_testing: true
+    multiple_testing_correction: "bonferroni"
+    
+  # Clinical Validation
+  clinical_validation:
+    domain_expert_evaluation: true
+    risk_stratification: true
+    bias_assessment: true
+    subgroup_analysis: true
+
+# Reproducibility
+reproducibility:
+  random_seed: 42
+  deterministic: false
+  benchmark: true
+  
+  # Environment Tracking
+  environment:
+    log_python_version: true
+    log_package_versions: true
+    log_hardware_info: true
+    log_git_commit: true 

@@ -1,0 +1,117 @@
+# Model Configuration for COVID-19 TFT Severity Prediction
+# Configuration file for TFT model architecture
+
+# TFT Model Architecture
+model:
+  name: "COVID19TFT"
+  type: "temporal_fusion_transformer"
+  
+  # TFT Backbone Parameters
+  backbone:
+    hidden_size: 128
+    attention_heads: 4
+    dropout: 0.1
+    num_layers: 4
+    max_encoder_length: 720  # 30 days in hours
+    max_prediction_length: 24  # 24 hours ahead
+    
+  # Multi-Task Heads Configuration
+  multi_task_heads:
+    mortality_risk:
+      type: "binary_classification"
+      hidden_size: 64
+      dropout: 0.1
+      activation: "sigmoid"
+      
+    icu_admission:
+      type: "binary_classification"
+      hidden_size: 64
+      dropout: 0.1
+      activation: "sigmoid"
+      
+    ventilator_need:
+      type: "binary_classification"
+      hidden_size: 64
+      dropout: 0.1
+      activation: "sigmoid"
+      
+    length_of_stay:
+      type: "regression"
+      hidden_size: 64
+      dropout: 0.1
+      activation: "relu"
+
+# Input Specifications
+input:
+  # Static Features (15 dimensions)
+  static_features:
+    total_dimensions: 15
+    demographics: 4  # age, gender, race, ethnicity
+    comorbidities: 5  # diabetes, hypertension, obesity, copd, heart_disease
+    socioeconomic: 2  # healthcare_coverage, income_level
+    other_static: 4  # additional static features
+    
+  # Temporal Features (50 dimensions)
+  temporal_features:
+    total_dimensions: 50
+    vital_signs: 6  # temperature, heart_rate, bp_systolic, bp_diastolic, o2_sat, resp_rate
+    laboratory_values: 8  # crp, d_dimer, wbc, platelets, lymphocytes, neutrophils, creatinine, troponin
+    medications: 5  # remdesivir, dexamethasone, tocilizumab, supportive_care, anticoagulants
+    procedures: 4  # intubation, mechanical_ventilation, diagnostic_tests, imaging_studies
+    devices: 3  # ventilator_settings, monitoring_equipment, life_support
+    other_temporal: 24  # additional temporal features
+
+# Loss Function Configuration
+loss:
+  # Multi-Task Loss Weights
+  weights:
+    mortality_risk: 2.0  # Highest priority
+    icu_admission: 1.5
+    ventilator_need: 1.5
+    length_of_stay: 1.0
+    
+  # Loss Functions
+  functions:
+    mortality_risk: "binary_cross_entropy"
+    icu_admission: "binary_cross_entropy"
+    ventilator_need: "binary_cross_entropy"
+    length_of_stay: "mse"
+    
+  # Attention Regularization
+  attention_regularization: 0.01
+
+# Uncertainty Quantification
+uncertainty:
+  enabled: true
+  method: "monte_carlo_dropout"
+  num_samples: 100
+  confidence_level: 0.95
+
+# Attention Analysis
+attention:
+  enabled: true
+  save_attention_weights: true
+  attention_analysis: true
+  causal_discovery: true
+
+# Model Initialization
+initialization:
+  weight_init: "xavier_uniform"
+  bias_init: "zeros"
+  pretrained: false
+  pretrained_path: null
+
+# Model Checkpointing
+checkpointing:
+  save_best: true
+  save_last: true
+  monitor: "val_loss"
+  mode: "min"
+  save_top_k: 3
+
+# Performance Optimization
+optimization:
+  gradient_checkpointing: true
+  mixed_precision: true
+  gradient_clipping: 1.0
+  memory_efficient: true 

@@ -1,0 +1,123 @@
+# Data Configuration for COVID-19 TFT Severity Prediction
+# Configuration file for data processing pipeline
+
+# Data Paths
+data:
+  raw_data_path: "10k_synthea_covid19_csv"
+  processed_data_path: "data/processed"
+  cache_path: "data/cache"
+  
+# COVID-19 Patient Identification
+covid19_identification:
+  keywords:
+    - "covid"
+    - "coronavirus"
+    - "sars-cov-2"
+    - "covid-19"
+    - "covid19"
+    - "pneumonia"
+    - "respiratory"
+    - "acute respiratory"
+  
+# Feature Engineering
+feature_engineering:
+  # Static Features (15 dimensions)
+  static_features:
+    demographics:
+      - "age"
+      - "gender"
+      - "race"
+      - "ethnicity"
+    comorbidities:
+      - "diabetes"
+      - "hypertension"
+      - "obesity"
+      - "copd"
+      - "heart_disease"
+    socioeconomic:
+      - "healthcare_coverage"
+      - "income_level"
+  
+  # Temporal Features (50 dimensions)
+  temporal_features:
+    vital_signs:
+      - "temperature"
+      - "heart_rate"
+      - "blood_pressure_systolic"
+      - "blood_pressure_diastolic"
+      - "oxygen_saturation"
+      - "respiratory_rate"
+    laboratory_values:
+      - "crp"
+      - "d_dimer"
+      - "white_blood_cells"
+      - "platelets"
+      - "lymphocytes"
+      - "neutrophils"
+      - "creatinine"
+      - "troponin"
+    medications:
+      - "remdesivir"
+      - "dexamethasone"
+      - "tocilizumab"
+      - "supportive_care"
+      - "anticoagulants"
+    procedures:
+      - "intubation"
+      - "mechanical_ventilation"
+      - "diagnostic_tests"
+      - "imaging_studies"
+    devices:
+      - "ventilator_settings"
+      - "monitoring_equipment"
+      - "life_support"
+
+# Data Processing
+processing:
+  # Timeline Configuration
+  timeline:
+    max_sequence_length: 720  # 30 days in hours
+    time_interval: "1H"  # Hourly intervals
+    padding_strategy: "zero"
+  
+  # Data Quality
+  quality:
+    max_missing_percentage: 0.2  # 20% missing values threshold
+    outlier_detection: true
+    data_validation: true
+  
+  # Preprocessing
+  preprocessing:
+    normalize_numerical: true
+    encode_categorical: true
+    handle_missing: "forward_fill"
+    outlier_handling: "iqr_method"
+
+# Output Specifications
+output:
+  # Multi-Task Predictions
+  predictions:
+    mortality_risk: "binary_classification"
+    icu_admission: "binary_classification"
+    ventilator_need: "binary_classification"
+    length_of_stay: "regression"
+  
+  # Uncertainty Quantification
+  uncertainty:
+    confidence_intervals: true
+    prediction_uncertainty: true
+    attention_weights: true
+
+# Performance Settings
+performance:
+  batch_size: 32
+  num_workers: 4
+  pin_memory: true
+  prefetch_factor: 2
+  
+# Logging
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_handler: true
+  console_handler: true 

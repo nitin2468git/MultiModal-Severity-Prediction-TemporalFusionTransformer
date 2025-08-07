@@ -1,180 +1,264 @@
-# Multi-Modal COVID-19 Severity Prediction using Temporal Fusion Transformer
+# COVID-19 Severity Prediction using Temporal Fusion Transformer
+
+A comprehensive machine learning project for predicting COVID-19 severity outcomes using multi-modal patient data and Temporal Fusion Transformer (TFT) architecture.
 
 ## 🎯 Project Overview
 
-This project implements a novel multi-modal approach to COVID-19 severity prediction using Temporal Fusion Transformer (TFT) architecture. The system integrates static patient features (demographics, comorbidities) with temporal clinical data (vital signs, medications, procedures) to predict multiple severity outcomes including mortality, ICU admission, ventilator requirement, and length of stay.
+This project implements a **4-day sprint methodology** to rapidly develop a Temporal Fusion Transformer model for COVID-19 severity prediction. The model predicts multiple clinical outcomes simultaneously:
+
+- **Mortality Risk** (Binary Classification)
+- **ICU Admission** (Binary Classification) 
+- **Ventilator Need** (Binary Classification)
+- **Length of Stay** (Regression)
 
 ## 🏗️ Architecture
 
-### Core Components
-- **Temporal Fusion Transformer**: Advanced attention-based architecture for multi-modal temporal data
-- **Multi-Task Learning**: Simultaneous prediction of 4 clinical outcomes
-- **Bayesian Uncertainty Quantification**: Calibrated confidence intervals for clinical decision support
-- **Attention-Based Causal Discovery**: Novel method for temporal causal relationships
+### Multi-Modal Data Integration
+- **Static Features** (15 dimensions): Demographics, comorbidities, socioeconomic factors
+- **Temporal Features** (50 dimensions): Vital signs, laboratory values, medications, procedures, devices
 
-### Data Pipeline
-```
-Synthea COVID-19 Dataset → Data Preprocessing → Feature Engineering → TFT Model → Clinical Predictions
-```
-
-## 📊 Dataset
-
-- **Source**: Synthea COVID-19 synthetic dataset (10,000 patients)
-- **Features**: 
-  - Static: Demographics, comorbidities, socioeconomic factors
-  - Temporal: Vital signs, laboratory values, medications, procedures, devices
-- **Outcomes**: Mortality, ICU admission, ventilator need, length of stay
-
-## 🚀 Quick Start
-
-### Environment Setup
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/nitin2468git/MultiModal-Severity-Prediction-TemporalFusionTransformer.git
-cd MultiModal-Severity-Prediction-TemporalFusionTransformer
-```
-
-2. **Create virtual environment**
-```bash
-python -m venv covid19_tft_env
-source covid19_tft_env/bin/activate  # On macOS/Linux
-# or
-covid19_tft_env\Scripts\activate  # On Windows
-```
-
-3. **Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-### Running the Project
-
-1. **Data Preprocessing**
-```bash
-python src/data/synthea_loader.py
-```
-
-2. **Model Training**
-```bash
-python src/training/trainer.py
-```
-
-3. **Evaluation**
-```bash
-python src/evaluation/evaluator.py
-```
+### TFT Model Specifications
+- **Backbone**: `pytorch_forecasting.TemporalFusionTransformer`
+- **Hidden Size**: 128 (configurable)
+- **Attention Heads**: 4 (configurable)
+- **Sequence Length**: Max 720 hours (30 days)
+- **Multi-Task Heads**: 4 separate prediction heads with weighted loss
 
 ## 📁 Project Structure
 
 ```
 covid19-tft-severity-prediction/
 ├── src/
-│   ├── data/                    # Data processing pipeline
-│   │   ├── synthea_loader.py
-│   │   ├── timeline_builder.py
-│   │   ├── feature_engineer.py
-│   │   └── data_validator.py
-│   ├── models/                  # Model implementations
-│   │   ├── tft_model.py
-│   │   ├── loss_functions.py
-│   │   └── baseline_models.py
-│   ├── training/                # Training pipeline
-│   │   ├── trainer.py
-│   │   ├── callbacks.py
-│   │   └── metrics.py
-│   └── evaluation/              # Evaluation and analysis
-│       ├── evaluator.py
-│       ├── attention_analysis.py
-│       └── clinical_validation.py
-├── configs/                     # Configuration files
-│   ├── model_config.yaml
-│   ├── training_config.yaml
-│   └── data_config.yaml
-├── notebooks/                   # Jupyter notebooks
-│   ├── data_exploration.ipynb
-│   ├── model_development.ipynb
-│   └── results_analysis.ipynb
-├── experiments/                 # Experiment logs
-├── data/                        # Data files
-│   ├── raw/                     # Original Synthea CSV files
-│   ├── processed/               # Cleaned data
-│   └── features/                # Engineered features
-├── models/                      # Trained model checkpoints
-├── results/                     # Generated results and plots
-└── docs/                        # Documentation
+│   ├── data/
+│   │   ├── synthea_loader.py      # Data loading and validation
+│   │   ├── timeline_builder.py    # Patient temporal sequences
+│   │   ├── feature_engineer.py    # Feature engineering
+│   │   └── data_validator.py      # Data quality checks
+│   ├── models/
+│   │   ├── tft_model.py          # TFT model implementation
+│   │   ├── loss_functions.py     # Multi-task loss functions
+│   │   └── baseline_models.py    # Baseline model comparisons
+│   ├── training/
+│   │   ├── trainer.py            # Training pipeline
+│   │   ├── callbacks.py          # Custom callbacks
+│   │   └── metrics.py            # Evaluation metrics
+│   └── evaluation/
+│       ├── evaluator.py          # Model evaluation
+│       │   ├── attention_analysis.py  # Attention pattern analysis
+│       └── clinical_validation.py     # Clinical validation
+├── configs/
+│   ├── model_config.yaml         # Model architecture config
+│   ├── training_config.yaml      # Training parameters
+│   └── data_config.yaml          # Data processing config
+├── notebooks/
+│   ├── data_exploration.ipynb   # Data analysis
+│   ├── model_development.ipynb   # Model development
+│   └── results_analysis.ipynb    # Results analysis
+├── experiments/
+│   ├── baseline_experiments/     # Baseline model results
+│   ├── tft_experiments/         # TFT model results
+│   ├── results/                 # Final results
+│   └── checkpoints/             # Model checkpoints
+├── data/
+│   ├── processed/               # Processed data
+│   └── cache/                   # Data cache
+└── 10k_synthea_covid19_csv/    # Raw Synthea dataset
 ```
 
-## 🔬 Key Features
+## 🚀 Quick Start
 
-### Multi-Task Prediction
-- **Mortality Risk**: Binary classification with calibrated probabilities
-- **ICU Admission**: Time-to-event prediction with urgency scoring
-- **Ventilator Requirement**: Support level classification (non-invasive/invasive)
-- **Length of Stay**: Regression with discharge readiness assessment
+### 1. Environment Setup
+```bash
+# Clone the repository
+git clone https://github.com/nitin2468git/MultiModal-Severity-Prediction-TemporalFusionTransformer.git
+cd MultiModal-Severity-Prediction-TemporalFusionTransformer
 
-### Advanced Analytics
-- **Attention Analysis**: Temporal attention patterns for clinical interpretability
-- **Causal Discovery**: Granger causality with attention weights
-- **Uncertainty Quantification**: Bayesian confidence intervals
-- **Clinical Validation**: Domain expert evaluation framework
+# Activate virtual environment
+source activate_env.sh
 
-### Performance Metrics
-- **AUROC**: > 0.85 for mortality prediction
-- **Calibration**: ECE < 0.05 for well-calibrated predictions
-- **Clinical Utility**: Net benefit analysis for decision support
+# Or manually:
+python -m venv covid19_tft_env
+source covid19_tft_env/bin/activate  # On Windows: covid19_tft_env\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 2. Data Loading
+```python
+from src.data.synthea_loader import SyntheaLoader
+
+# Load and validate data
+loader = SyntheaLoader("10k_synthea_covid19_csv")
+tables = loader.load_all_tables()
+covid19_patients = loader.identify_covid19_patients()
+quality_metrics = loader.validate_data_quality()
+```
+
+### 3. Model Training
+```python
+from src.training.trainer import COVID19Trainer
+from configs.training_config import load_config
+
+# Load configuration
+config = load_config("configs/training_config.yaml")
+
+# Initialize trainer
+trainer = COVID19Trainer(config)
+trainer.train()
+```
+
+## 📊 Expected Results
+
+### Performance Targets
+- **Mortality AUROC**: > 0.85
+- **ICU AUROC**: > 0.80  
+- **Ventilator AUROC**: > 0.75
+- **LOS RMSE**: < 5.0 days
+- **Calibration**: ECE < 0.05
+
+### Clinical Impact
+- **Risk Stratification**: Clear thresholds for clinical action
+- **Resource Allocation**: Optimization framework for healthcare resources
+- **Treatment Timing**: Causal analysis for intervention windows
+- **Uncertainty Communication**: Calibrated confidence intervals
+
+## 🔬 Research Contributions
+
+### Novel Features
+- **Multi-Modal Integration**: Static + temporal patient data
+- **Multi-Task Learning**: Simultaneous prediction of 4 outcomes
+- **Attention-Based Causal Discovery**: Granger causality with attention weights
+- **Uncertainty Quantification**: Bayesian methods for calibrated predictions
+- **Clinical Interpretability**: Attention patterns aligned with medical knowledge
+
+### Technical Innovations
+- **Temporal Fusion Transformer**: Adapted for healthcare time-series
+- **Multi-Task Loss Function**: Weighted combination of clinical outcomes
+- **Robust Data Processing**: Handle missing data and class imbalance
+- **Scalable Architecture**: Support for 10,000+ patient datasets
+
+## 📈 Development Timeline
+
+### 4-Day Sprint Methodology
+
+#### **Day 1: Data Pipeline Development**
+- ✅ Environment setup and dependency installation
+- ✅ Data exploration and quality assessment
+- 🔄 SyntheaLoader implementation
+- 🔄 TimelineBuilder implementation
+- 🔄 FeatureEngineer development
+- 🔄 TFTFormatter for PyTorch tensors
+
+#### **Day 2: Model Implementation**
+- 🔄 TFT model architecture implementation
+- 🔄 Multi-task prediction heads
+- 🔄 Loss function development
+- 🔄 Training pipeline implementation
+- 🔄 PyTorch Lightning integration
+
+#### **Day 3: Training and Evaluation**
+- 🔄 Hyperparameter tuning setup
+- 🔄 Cross-validation implementation
+- 🔄 Full model training (30-50 epochs)
+- 🔄 Evaluation pipeline implementation
+- 🔄 Attention analysis development
+
+#### **Day 4: Results and Documentation**
+- 🔄 Final model evaluation
+- 🔄 Statistical analysis
+- 🔄 Paper writing (ACM format)
+- 🔄 Presentation creation
+- 🔄 Repository organization
 
 ## 🛠️ Technical Stack
 
-- **Deep Learning**: PyTorch, PyTorch Lightning, PyTorch Forecasting
-- **Data Processing**: Pandas, NumPy, Scikit-learn
-- **Visualization**: Matplotlib, Seaborn, Plotly
-- **Scientific Computing**: Lifelines, Statsmodels
-- **Development**: Jupyter, Black, Flake8
+### Core Dependencies
+- **PyTorch**: Deep learning framework
+- **PyTorch Forecasting**: Temporal Fusion Transformer implementation
+- **PyTorch Lightning**: Training framework
+- **Pandas/NumPy**: Data manipulation
+- **Scikit-learn**: Machine learning utilities
 
-## 📈 Results
+### Visualization & Analysis
+- **Matplotlib/Seaborn**: Static visualizations
+- **Plotly**: Interactive visualizations
+- **Lifelines**: Survival analysis
+- **Statsmodels**: Statistical analysis
 
-### Model Performance
-| Metric | Mortality | ICU Admission | Ventilator Need | Length of Stay |
-|--------|-----------|---------------|-----------------|----------------|
-| AUROC  | 0.891±0.023 | 0.847±0.031 | 0.823±0.028 | - |
-| RMSE   | - | - | - | 4.87±0.34 days |
-| ECE    | 0.023 | 0.031 | 0.028 | - |
+### Development Tools
+- **YAML**: Configuration management
+- **Jupyter**: Interactive development
+- **Git**: Version control
+- **Docker**: Containerization (optional)
 
-### Clinical Insights
-- **Critical Time Window**: 24-48 hours post-admission
-- **Key Features**: Oxygen saturation, respiratory patterns, inflammatory markers
-- **Causal Relationships**: Discovered temporal dependencies between clinical variables
+## 📋 Requirements
 
-## 🎓 Research Contributions
+### System Requirements
+- **Python**: 3.8+
+- **GPU**: RTX 3070 or equivalent (8GB VRAM)
+- **RAM**: 16GB+
+- **Storage**: 10GB+ for dataset and models
 
-1. **Novel Attention-Based Causal Discovery**: First application of attention weights for Granger causality in clinical data
-2. **Bayesian Multi-Task Framework**: Rigorous uncertainty quantification for clinical prediction
-3. **Patient Contrastive Learning**: Mathematical framework for clinical similarity representations
-4. **Adaptive Loss Weighting**: Dynamic multi-task optimization with theoretical guarantees
+### Performance Requirements
+- **Training Time**: < 4 hours on RTX 3070
+- **Memory Usage**: < 8GB GPU VRAM
+- **Inference Time**: < 500ms per patient prediction
+- **Scalability**: Support for 10,000+ patient dataset
 
-## 📚 Publications
+## 🔍 Data Description
 
-This work is part of ongoing research in interpretable healthcare AI. For detailed methodology and results, see the accompanying paper and presentation materials.
+### Synthea COVID-19 Dataset
+- **Source**: Synthea synthetic patient data
+- **Size**: 10,000 synthetic patients
+- **Tables**: 17 CSV files (patients, encounters, conditions, medications, etc.)
+- **COVID-19 Patients**: ~9,106 identified patients
+- **Temporal Coverage**: Variable length patient timelines
+
+### Data Quality
+- **Missing Data**: Handle up to 20% missing values
+- **Class Imbalance**: Address through focal loss and sampling
+- **Outliers**: Robust loss functions (Huber loss for regression)
+- **Data Drift**: Monitor and detect distribution shifts
+
+## 📚 Documentation
+
+### Key Documents
+- **Design Document**: `tft_design_doc.md` - Comprehensive project blueprint
+- **Architecture**: `tft_architecture.md` - Technical architecture details
+- **Paper Layout**: `tft_paper_layout.md` - Research paper structure
+
+### Configuration Files
+- **Model Config**: `configs/model_config.yaml` - TFT architecture parameters
+- **Training Config**: `configs/training_config.yaml` - Training pipeline settings
+- **Data Config**: `configs/data_config.yaml` - Data processing parameters
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our contributing guidelines and development workflow rules in `.cursor/rules/`.
+### Development Guidelines
+- Follow the 4-day sprint methodology
+- Implement type hints and comprehensive documentation
+- Ensure clinical relevance and interpretability
+- Maintain code quality and testing standards
+- Track experiments and results systematically
+
+### Code Standards
+- **Naming**: PascalCase for classes, snake_case for functions
+- **Documentation**: Comprehensive docstrings with clinical context
+- **Testing**: Unit tests for all components
+- **Logging**: Structured logging with clinical relevance
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## 👥 Contact
+
+- **Repository**: https://github.com/nitin2468git/MultiModal-Severity-Prediction-TemporalFusionTransformer
+- **Author**: Nitin Bhatnagar
+- **Project**: COVID-19 TFT Severity Prediction
+
 ## 🙏 Acknowledgments
 
-- Synthea team for the COVID-19 synthetic dataset
-- PyTorch Forecasting community for the TFT implementation
-- Clinical domain experts for validation and feedback
-
-## 📞 Contact
-
-For questions or collaborations, please reach out to the project maintainers.
-
----
-
-**Note**: This is a research project. For clinical use, additional validation and regulatory approval may be required. 
+- **Synthea**: Synthetic patient data generation
+- **PyTorch Forecasting**: Temporal Fusion Transformer implementation
+- **PyTorch Lightning**: Training framework
+- **Research Community**: COVID-19 clinical research contributions 
