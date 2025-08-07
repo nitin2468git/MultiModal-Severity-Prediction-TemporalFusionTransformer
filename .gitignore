@@ -261,6 +261,11 @@ config/secrets.json
 docs/_build/
 docs/build/
 
+# Documentation files (exclude from version control)
+tft_architecture.md
+tft_design_doc.md
+tft_paper_layout.md
+
 # Coverage reports
 htmlcov/
 .coverage
