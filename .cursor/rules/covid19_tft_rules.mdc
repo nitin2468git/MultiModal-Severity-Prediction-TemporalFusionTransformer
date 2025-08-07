@@ -1,0 +1,201 @@
+# COVID-19 TFT Severity Prediction Rules
+
+## Project Architecture Requirements
+
+### Data Processing Pipeline
+- **SyntheaLoader**: Must load all CSV files from `10k_synthea_covid19_csv/`
+- **TimelineBuilder**: Create patient temporal sequences with hourly intervals
+- **FeatureEngineer**: Generate static and temporal features
+- **DataValidator**: Ensure data quality and completeness
+- **TFTFormatter**: Convert to PyTorch tensors for TFT input
+
+### Model Architecture Constraints
+- **TFT Backbone**: Use `pytorch_forecasting.TemporalFusionTransformer`
+- **Multi-Task Heads**: Mortality, ICU admission, ventilator need, length of stay
+- **Hidden Size**: 128 (configurable via config)
+- **Attention Heads**: 4 (configurable via config)
+- **Dropout**: 0.1 (configurable via config)
+- **Sequence Length**: Max 720 hours (30 days), variable length support
+
+### Input Data Specifications
+```
+Static Features (15 dimensions):
+├── Demographics: age, gender, race, ethnicity
+├── Comorbidities: diabetes, hypertension, obesity, COPD, heart_disease
+└── Socioeconomic: healthcare_coverage, income_level
+
+Temporal Features (50 dimensions):
+├── Vital Signs: temperature, heart_rate, blood_pressure, oxygen_saturation
+├── Laboratory Values: CRP, D-dimer, white_blood_cells, platelets
+├── Medications: remdesivir, dexamethasone, tocilizumab, supportive_care
+├── Procedures: intubation, mechanical_ventilation, diagnostic_tests
+└── Devices: ventilator_settings, monitoring_equipment, life_support
+```
+
+### Output Specifications
+```
+Multi-Task Predictions:
+├── Mortality Risk: Binary classification (0-1 probability)
+├── ICU Admission: Binary classification (0-1 probability)
+├── Ventilator Need: Binary classification (0-1 probability)
+└── Length of Stay: Regression (positive days)
+
+Uncertainty Quantification:
+├── Calibrated confidence intervals
+├── Prediction uncertainty scores
+└── Attention weights for interpretability
+```
+
+## Training Pipeline Requirements
+
+### Loss Function Design
+```python
+Total Loss = α₁ * Mortality_Loss + α₂ * ICU_Loss + 
+             α₃ * Ventilator_Loss + α₄ * LOS_Loss + 
+             α₅ * Attention_Regularization
+
+Default Weights:
+- Mortality: 2.0 (highest priority)
+- ICU Admission: 1.5
+- Ventilator Need: 1.5
+- Length of Stay: 1.0
+```
+
+### Training Configuration
+- **Batch Size**: 32 (adjustable based on GPU memory)
+- **Learning Rate**: 0.001 with AdamW optimizer
+- **Epochs**: 100 with early stopping (patience=15)
+- **Mixed Precision**: FP16 for memory efficiency
+- **Gradient Clipping**: 1.0 to prevent exploding gradients
+
+### Validation Strategy
+- **Temporal Split**: No data leakage across time
+- **Patient-Level Split**: Stratified by outcomes
+- **Cross-Validation**: 5-fold with patient-level splits
+- **Test Set**: 10% held-out for final evaluation
+
+## Evaluation Metrics Requirements
+
+### Performance Metrics
+- **AUROC**: Area under ROC curve for binary tasks
+- **AUPRC**: Area under precision-recall curve
+- **Calibration**: Expected Calibration Error (ECE)
+- **Clinical Metrics**: Sensitivity, Specificity, PPV, NPV
+- **Regression**: MAE, RMSE for length of stay
+
+### Statistical Requirements
+- **Confidence Intervals**: Bootstrap with n=1000
+- **Statistical Significance**: p < 0.05 for model comparisons
+- **Effect Sizes**: Cohen's d for clinical significance
+- **Multiple Testing**: Bonferroni correction for multiple comparisons
+
+### Interpretability Requirements
+- **Attention Analysis**: Temporal attention patterns
+- **Feature Importance**: Permutation importance scores
+- **Causal Discovery**: Granger causality with attention weights
+- **Clinical Validation**: Domain expert evaluation
+
+## Code Organization Rules
+
+### Project Structure
+```
+covid19-tft-severity-prediction/
+├── src/
+│   ├── data/
+│   │   ├── synthea_loader.py
+│   │   ├── timeline_builder.py
+│   │   ├── feature_engineer.py
+│   │   └── data_validator.py
+│   ├── models/
+│   │   ├── tft_model.py
+│   │   ├── loss_functions.py
+│   │   └── baseline_models.py
+│   ├── training/
+│   │   ├── trainer.py
+│   │   ├── callbacks.py
+│   │   └── metrics.py
+│   └── evaluation/
+│       ├── evaluator.py
+│       ├── attention_analysis.py
+│       └── clinical_validation.py
+├── configs/
+│   ├── model_config.yaml
+│   ├── training_config.yaml
+│   └── data_config.yaml
+├── notebooks/
+│   ├── data_exploration.ipynb
+│   ├── model_development.ipynb
+│   └── results_analysis.ipynb
+└── experiments/
+    ├── baseline_experiments/
+    ├── tft_experiments/
+    └── results/
+```
+
+### Naming Conventions
+- **Classes**: PascalCase (`COVID19TFT`, `SyntheaLoader`, `TimelineBuilder`)
+- **Functions**: snake_case (`build_patient_timeline`, `compute_metrics`)
+- **Variables**: snake_case (`batch_size`, `learning_rate`)
+- **Constants**: UPPER_SNAKE_CASE (`MAX_SEQUENCE_LENGTH`, `NUM_ATTENTION_HEADS`)
+- **Config Files**: Use descriptive names (`model_config.yaml`, `training_config.yaml`)
+
+### Documentation Standards
+- **Class Docstrings**: Describe architecture, inputs, outputs, and clinical relevance
+- **Function Docstrings**: Include parameter types, return types, and clinical context
+- **Inline Comments**: Explain clinical reasoning and mathematical operations
+- **README**: Comprehensive setup and usage instructions
+
+## Performance Requirements
+
+### Model Performance Targets
+- **Mortality AUROC**: > 0.85 (statistically significant improvement)
+- **ICU AUROC**: > 0.80 (statistically significant improvement)
+- **Ventilator AUROC**: > 0.75 (statistically significant improvement)
+- **LOS RMSE**: < 5.0 days (statistically significant improvement)
+- **Calibration**: ECE < 0.05 (well-calibrated predictions)
+
+### Computational Requirements
+- **Training Time**: < 4 hours on RTX 3070 or equivalent
+- **Memory Usage**: < 8GB GPU VRAM
+- **Inference Time**: < 500ms per patient prediction
+- **Scalability**: Support for 10,000+ patient dataset
+
+### Robustness Requirements
+- **Missing Data**: Handle up to 20% missing values
+- **Class Imbalance**: Address through focal loss and sampling
+- **Outliers**: Robust loss functions (Huber loss for regression)
+- **Data Drift**: Monitor and detect distribution shifts
+
+## Clinical Validation Rules
+
+### Domain Expert Requirements
+- **Clinical Interpretability**: Attention patterns must align with medical knowledge
+- **Risk Stratification**: Clear thresholds for clinical action
+- **Uncertainty Communication**: Calibrated confidence intervals
+- **Bias Assessment**: Evaluate across demographic subgroups
+
+### Regulatory Compliance
+- **Data Privacy**: No PII in model outputs or logs
+- **Transparency**: Explainable AI requirements
+- **Audit Trail**: Complete experiment tracking
+- **Version Control**: Model versioning and rollback capability
+
+## Research Paper Requirements
+
+### Mathematical Rigor
+- **Formal Problem Definition**: Clear mathematical formulation
+- **Theoretical Contributions**: Novel attention-based causal discovery
+- **Statistical Analysis**: Rigorous hypothesis testing
+- **Uncertainty Quantification**: Bayesian framework with calibration
+
+### Clinical Impact
+- **Clinical Decision Support**: Actionable insights for clinicians
+- **Resource Allocation**: Optimization framework for healthcare resources
+- **Treatment Timing**: Causal analysis for intervention windows
+- **Risk Communication**: Clear communication of uncertainty
+
+### Publication Standards
+- **ACM Format**: Follow ACM conference formatting guidelines
+- **Reproducibility**: Complete code and data pipeline
+- **Statistical Reporting**: Effect sizes, confidence intervals, p-values
+- **Clinical Validation**: Domain expert evaluation and feedback 

@@ -1,0 +1,43 @@
+# Core ML and Deep Learning
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+pytorch-forecasting>=0.10.0
+pytorch-lightning>=2.0.0
+
+# Data Processing
+pandas>=1.5.0
+numpy>=1.21.0
+scikit-learn>=1.1.0
+scipy>=1.9.0
+
+# Visualization
+matplotlib>=3.5.0
+seaborn>=0.11.0
+plotly>=5.0.0
+
+# Jupyter and Development
+jupyter>=1.0.0
+ipykernel>=6.0.0
+notebook>=6.4.0
+
+# Scientific Computing
+lifelines>=0.27.0
+statsmodels>=0.13.0
+
+# Utilities
+tqdm>=4.64.0
+pyyaml>=6.0
+click>=8.0.0
+
+# Optional: Advanced Features
+# transformers>=4.20.0  # For advanced NLP features
+# wandb>=0.13.0        # For experiment tracking
+# tensorboard>=2.10.0   # For logging
+# mlflow>=1.30.0       # For model management
+
+# Development and Testing
+pytest>=7.0.0
+black>=22.0.0
+flake8>=5.0.0
+mypy>=0.991 

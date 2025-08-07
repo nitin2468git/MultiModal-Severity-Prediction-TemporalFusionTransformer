@@ -1,0 +1,369 @@
+# Development Workflow Rules
+
+## 4-Day Sprint Methodology
+
+### Day 1: Data Pipeline Development (8 hours)
+```
+Morning (2 hours):
+├── Environment setup and dependency installation
+├── Data exploration and quality assessment
+├── SyntheaLoader implementation
+└── Initial data validation
+
+Afternoon (3 hours):
+├── TimelineBuilder implementation
+├── FeatureEngineer development
+├── Data preprocessing pipeline
+└── TFTFormatter for PyTorch tensors
+
+Evening (3 hours):
+├── Feature engineering optimization
+├── Data validation and quality checks
+├── Save processed data for Day 2
+└── Documentation and testing
+```
+
+### Day 2: Model Implementation (8 hours)
+```
+Morning (2 hours):
+├── TFT model architecture implementation
+├── Multi-task prediction heads
+├── Loss function development
+└── Model initialization and testing
+
+Afternoon (3 hours):
+├── Training pipeline implementation
+├── PyTorch Lightning integration
+├── Callbacks and metrics setup
+└── Baseline models for comparison
+
+Evening (3 hours):
+├── Data module integration
+├── Training loop validation
+├── Model checkpointing
+└── Performance optimization
+```
+
+### Day 3: Training and Evaluation (8 hours)
+```
+Morning (2 hours):
+├── Hyperparameter tuning setup
+├── Cross-validation implementation
+├── Learning rate scheduling
+└── Early stopping configuration
+
+Afternoon (3 hours):
+├── Full model training (30-50 epochs)
+├── Baseline model training
+├── Performance monitoring
+└── Model checkpoint management
+
+Evening (3 hours):
+├── Evaluation pipeline implementation
+├── Attention analysis development
+├── Interpretability analysis
+└── Results generation
+```
+
+### Day 4: Results and Documentation (8 hours)
+```
+Morning (2 hours):
+├── Final model evaluation
+├── Statistical analysis
+├── Visualization generation
+└── Clinical validation
+
+Afternoon (3 hours):
+├── Paper writing (ACM format)
+├── Abstract and introduction
+├── Methodology and results
+└── Discussion and conclusion
+
+Evening (3 hours):
+├── Presentation creation
+├── Code documentation
+├── Repository organization
+└── Final deliverables
+```
+
+## Code Quality Standards
+
+### Type Hints and Documentation
+```python
+def process_patient_timeline(
+    patient_id: str, 
+    tables: Dict[str, pd.DataFrame],
+    config: Dict[str, Any]
+) -> Tuple[pd.DataFrame, Dict[str, float]]:
+    """
+    Process patient timeline data for TFT model.
+    
+    Args:
+        patient_id: Unique patient identifier
+        tables: Dictionary of loaded CSV tables
+        config: Configuration parameters
+        
+    Returns:
+        Tuple of processed timeline and metadata
+        
+    Raises:
+        KeyError: If patient data is missing
+        ValueError: If timeline construction fails
+    """
+    pass
+```
+
+### Error Handling and Logging
+```python
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+try:
+    timeline = builder.build_patient_timeline(patient_id)
+except KeyError as e:
+    logger.error(f"Missing data for patient {patient_id}: {e}")
+    return None
+except Exception as e:
+    logger.error(f"Unexpected error processing {patient_id}: {e}")
+    raise
+```
+
+### Testing Requirements
+- **Unit Tests**: Test all core functions and classes
+- **Integration Tests**: Test complete pipeline end-to-end
+- **Performance Tests**: Benchmark training and inference speed
+- **Clinical Tests**: Validate against known clinical scenarios
+
+### Version Control Standards
+- **Commit Messages**: Descriptive and follow conventional commits
+- **Branch Strategy**: Feature branches for major components
+- **Pull Requests**: Required for all changes
+- **Code Review**: At least one reviewer for all changes
+
+## Rapid Development Practices
+
+### Quick Start Scripts
+```python
+# scripts/quick_start.py
+def day1_data_pipeline():
+    """Day 1: Set up data pipeline"""
+    print("🚀 Day 1: Data Pipeline Development")
+    
+    # Load and explore data
+    loader = SyntheaLoader('data/raw/')
+    tables = loader.load_all_tables()
+    covid_patients = loader.get_covid_patients()
+    
+    print(f"Found {len(covid_patients)} COVID patients")
+    
+    # Build timelines for first 100 patients (for speed)
+    timeline_builder = TimelineBuilder(tables)
+    sample_patients = covid_patients[:100]
+    
+    processed_data = []
+    for patient_id in tqdm(sample_patients):
+        timeline = timeline_builder.build_patient_timeline(patient_id)
+        features = timeline_builder.create_time_series_features(timeline)
+        processed_data.append(features)
+    
+    # Save processed data
+    with open('data/processed/day1_timelines.pkl', 'wb') as f:
+        pickle.dump(processed_data, f)
+    
+    print("✅ Day 1 Complete: Data pipeline ready")
+```
+
+### Configuration Management
+```python
+# configs/model_config.yaml
+model:
+  name: "COVID19TFT"
+  hidden_size: 128
+  attention_head_size: 4
+  num_encoder_layers: 3
+  num_decoder_layers: 3
+  dropout: 0.1
+  learning_rate: 0.001
+  weight_decay: 0.01
+  
+multi_task:
+  task_weights:
+    mortality: 2.0
+    icu_admission: 1.5
+    ventilator_need: 1.5
+    length_of_stay: 1.0
+```
+
+### Experiment Tracking
+```python
+def track_experiment(config, results):
+    """Track experiment configuration and results"""
+    experiment = {
+        'timestamp': datetime.now().isoformat(),
+        'config': config,
+        'results': results,
+        'git_commit': get_git_commit_hash(),
+        'environment': log_environment_info()
+    }
+    
+    experiment_id = hashlib.md5(str(experiment).encode()).hexdigest()[:8]
+    
+    with open(f'experiments/{experiment_id}.json', 'w') as f:
+        json.dump(experiment, f, indent=2)
+    
+    return experiment_id
+```
+
+## Performance Optimization
+
+### Memory Management
+```python
+# Gradient checkpointing for memory efficiency
+class COVID19TFT(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.use_checkpointing = config.get('gradient_checkpointing', True)
+        
+    def forward(self, x):
+        if self.use_checkpointing and self.training:
+            return checkpoint(self._forward_impl, x)
+        else:
+            return self._forward_impl(x)
+
+# Dynamic batching based on sequence length
+class COVID19DataLoader:
+    def __init__(self, dataset, config):
+        self.dataset = dataset
+        self.batch_size = config['batch_size']
+        
+    def collate_fn(self, batch):
+        # Sort by sequence length for efficient padding
+        batch = sorted(batch, key=lambda x: x['sequence_length'], reverse=True)
+        
+        # Dynamic batch size based on max sequence length
+        max_len = batch[0]['sequence_length']
+        if max_len > 200:
+            actual_batch_size = self.batch_size // 2
+        else:
+            actual_batch_size = self.batch_size
+            
+        return batch[:actual_batch_size]
+```
+
+### Training Optimization
+```python
+# Learning rate finder
+def find_optimal_lr(model, dataloader):
+    """Find optimal learning rate using LR range test"""
+    lr_finder = LRFinder(model, torch.optim.Adam(model.parameters()))
+    lr_finder.range_test(dataloader, end_lr=1, num_iter=100)
+    optimal_lr = lr_finder.history['lr'][np.argmin(lr_finder.history['loss'])]
+    return optimal_lr
+
+# Mixed precision training
+trainer = pl.Trainer(
+    precision=16,  # Use FP16
+    accumulate_grad_batches=2,  # Gradient accumulation
+    gradient_clip_val=1.0
+)
+```
+
+## Reproducibility Standards
+
+### Random Seed Management
+```python
+def set_random_seeds(seed: int = 42):
+    """Set random seeds for reproducibility"""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+```
+
+### Environment Tracking
+```python
+def log_environment_info():
+    """Log all relevant version information"""
+    info = {
+        'python_version': sys.version,
+        'pytorch_version': torch.__version__,
+        'transformers_version': transformers.__version__,
+        'pandas_version': pd.__version__,
+        'numpy_version': np.__version__,
+        'cuda_version': torch.version.cuda,
+        'gpu_name': torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'
+    }
+    
+    with open('experiment_environment.json', 'w') as f:
+        json.dump(info, f, indent=2)
+    
+    return info
+```
+
+## Critical Success Factors
+
+### Risk Mitigation Strategies
+```
+Risk 1: Data Processing Complexity
+├── Mitigation: Start with subset of patients (100-500)
+├── Fallback: Use simplified feature set
+└── Validation: Test pipeline on known data
+
+Risk 2: Model Training Time
+├── Mitigation: Use smaller model initially
+├── Fallback: Pre-trained embeddings
+└── Optimization: Mixed precision training
+
+Risk 3: Memory Requirements
+├── Mitigation: Batch size optimization
+├── Fallback: Gradient accumulation
+└── Hardware: Use GPU with sufficient VRAM
+
+Risk 4: Convergence Issues
+├── Mitigation: Learning rate scheduling
+├── Fallback: Simpler architecture
+└── Debugging: Extensive logging
+```
+
+### Quality Assurance Checklist
+```
+Code Quality:
+├── ✅ Type hints for all functions
+├── ✅ Comprehensive error handling
+├── ✅ Unit tests for core components
+├── ✅ Integration tests for pipeline
+└── ✅ Performance benchmarks
+
+Documentation:
+├── ✅ Class and function docstrings
+├── ✅ README with setup instructions
+├── ✅ API documentation
+├── ✅ Clinical context explanations
+└── ✅ Mathematical formulations
+
+Reproducibility:
+├── ✅ Random seed management
+├── ✅ Environment tracking
+├── ✅ Experiment logging
+├── ✅ Version control
+└── ✅ Dependency pinning
+```
+
+## Final Deliverables Structure
+```
+Final Submission Package:
+├── README.md                          # Project overview and setup
+├── requirements.txt                   # Exact dependency versions
+├── environment.yml                    # Conda environment file
+├── src/                              # Source code
+├── notebooks/                        # Jupyter notebooks with results
+├── results/                          # Generated plots, tables, metrics
+├── models/                           # Trained model checkpoints
+├── paper/                            # ACM format paper (PDF + LaTeX)
+├── presentation/                     # Slides and recorded video
+├── data/                             # Processed data (not raw Synthea)
+└── experiments/                      # Experiment logs and configurations
+``` 
