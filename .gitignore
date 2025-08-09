@@ -292,3 +292,8 @@ htmlcov/
 
 # PyTorch Lightning logs
 lightning_logs/
+# Ignore root docs and env script
+activate_env.sh
+tft_architecture.md
+tft_design_doc.md
+tft_paper_layout.md
