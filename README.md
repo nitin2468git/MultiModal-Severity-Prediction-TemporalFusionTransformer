@@ -2,7 +2,7 @@
 
 A comprehensive machine learning project for predicting COVID-19 severity outcomes using multi-modal patient data and Temporal Fusion Transformer (TFT) architecture.
 
-## 🎯 Project Overview
+##  Project Overview
 
 This project implements a **4-day sprint methodology** to rapidly develop a Temporal Fusion Transformer model for COVID-19 severity prediction. The model predicts multiple clinical outcomes simultaneously:
 
@@ -11,7 +11,7 @@ This project implements a **4-day sprint methodology** to rapidly develop a Temp
 - **Ventilator Need** (Binary Classification)
 - **Length of Stay** (Regression)
 
-## 🏗️ Architecture
+##  Architecture
 
 ### Multi-Modal Data Integration
 - **Static Features** (15 dimensions): Demographics, comorbidities, socioeconomic factors
@@ -24,7 +24,7 @@ This project implements a **4-day sprint methodology** to rapidly develop a Temp
 - **Sequence Length**: Max 720 hours (30 days)
 - **Multi-Task Heads**: 4 separate prediction heads with weighted loss
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 covid19-tft-severity-prediction/
@@ -65,7 +65,7 @@ covid19-tft-severity-prediction/
 └── 10k_synthea_covid19_csv/    # Raw Synthea dataset
 ```
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Environment Setup
 ```bash
@@ -106,7 +106,7 @@ trainer = COVID19Trainer(config)
 trainer.train()
 ```
 
-## 📊 Expected Results
+## Expected Results
 
 ### Performance Targets
 - **Mortality AUROC**: > 0.85
@@ -121,7 +121,7 @@ trainer.train()
 - **Treatment Timing**: Causal analysis for intervention windows
 - **Uncertainty Communication**: Calibrated confidence intervals
 
-## 🔬 Research Contributions
+##  Research Contributions
 
 ### Novel Features
 - **Multi-Modal Integration**: Static + temporal patient data
@@ -136,7 +136,7 @@ trainer.train()
 - **Robust Data Processing**: Handle missing data and class imbalance
 - **Scalable Architecture**: Support for 10,000+ patient datasets
 
-## 📈 Development Timeline
+##  Development Timeline
 
 ### 4-Day Sprint Methodology
 
@@ -169,7 +169,7 @@ trainer.train()
 - 🔄 Presentation creation
 - 🔄 Repository organization
 
-## 🛠️ Technical Stack
+##  Technical Stack
 
 ### Core Dependencies
 - **PyTorch**: Deep learning framework
@@ -190,7 +190,7 @@ trainer.train()
 - **Git**: Version control
 - **Docker**: Containerization (optional)
 
-## 📋 Requirements
+##  Requirements
 
 ### System Requirements
 - **Python**: 3.8+
@@ -204,7 +204,7 @@ trainer.train()
 - **Inference Time**: < 500ms per patient prediction
 - **Scalability**: Support for 10,000+ patient dataset
 
-## 🔍 Data Description
+##  Data Description
 
 ### Synthea COVID-19 Dataset
 - **Source**: Synthea synthetic patient data
@@ -219,7 +219,7 @@ trainer.train()
 - **Outliers**: Robust loss functions (Huber loss for regression)
 - **Data Drift**: Monitor and detect distribution shifts
 
-## 📚 Documentation
+##  Documentation
 
 ### Key Documents
 - **Design Document**: `tft_design_doc.md` - Comprehensive project blueprint
@@ -231,7 +231,7 @@ trainer.train()
 - **Training Config**: `configs/training_config.yaml` - Training pipeline settings
 - **Data Config**: `configs/data_config.yaml` - Data processing parameters
 
-## 🤝 Contributing
+##  Contributing
 
 ### Development Guidelines
 - Follow the 4-day sprint methodology
@@ -246,11 +246,11 @@ trainer.train()
 - **Testing**: Unit tests for all components
 - **Logging**: Structured logging with clinical relevance
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 👥 Contact
+##  Contact
 
 - **Repository**: https://github.com/nitin2468git/MultiModal-Severity-Prediction-TemporalFusionTransformer
 - **Author**: Nitin Bhatnagar
