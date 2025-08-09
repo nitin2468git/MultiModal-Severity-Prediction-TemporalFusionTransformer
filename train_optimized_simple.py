@@ -26,6 +26,7 @@ from models.tft_model import COVID19TFTModel
 from training.trainer import COVID19Trainer
 from evaluation.metrics import COVID19Metrics
 from data.data_pipeline import DataPipeline
+from data.tft_formatter import TFTDataset
 
 def setup_logging():
     """Setup logging configuration."""
@@ -83,24 +84,33 @@ def run_data_pipeline_optimized(sample_size: int = 12000):
             
             # Process in chunks of 1000 patients
             chunk_size = 1000
-            all_train_data = []
-            all_val_data = []
-            all_test_data = []
+            all_train_patients = []
+            all_val_patients = []
+            all_test_patients = []
             
             for i in range(0, sample_size, chunk_size):
                 current_chunk_size = min(chunk_size, sample_size - i)
                 print(f"🔄 Processing chunk {i//chunk_size + 1}/{(sample_size + chunk_size - 1)//chunk_size} ({current_chunk_size} patients)")
                 
                 # Run pipeline for this chunk
-                chunk_results = data_pipeline.run_complete_pipeline(sample_size=current_chunk_size)
-                chunk_train = chunk_results['datasets'].get('train', [])
-                chunk_val = chunk_results['datasets'].get('validation', [])
-                chunk_test = chunk_results['datasets'].get('test', [])
+                chunk_results = data_pipeline.run_complete_pipeline(sample_size=current_chunk_size, start_index=i)
+                # Extract underlying patient records from TFTDataset for each split
+                def _extract_patients(split_dict):
+                    if not split_dict:
+                        return []
+                    ds = split_dict.get('dataset', None)
+                    if ds is None:
+                        return []
+                    return [ds[j] for j in range(len(ds))]
+
+                chunk_train_patients = _extract_patients(chunk_results['datasets'].get('train', {}))
+                chunk_val_patients = _extract_patients(chunk_results['datasets'].get('validation', {}))
+                chunk_test_patients = _extract_patients(chunk_results['datasets'].get('test', {}))
                 
                 # Combine results
-                all_train_data.extend(chunk_train)
-                all_val_data.extend(chunk_val)
-                all_test_data.extend(chunk_test)
+                all_train_patients.extend(chunk_train_patients)
+                all_val_patients.extend(chunk_val_patients)
+                all_test_patients.extend(chunk_test_patients)
                 
                 # Memory management
                 gc.collect()
@@ -112,19 +122,24 @@ def run_data_pipeline_optimized(sample_size: int = 12000):
                 processed = min(i + chunk_size, sample_size)
                 print(f"📊 Progress: {processed}/{sample_size} patients processed")
             
-            processed_datasets = {
-                'train': all_train_data,
-                'val': all_val_data,
-                'test': all_test_data
-            }
+            # Re-wrap combined patients into TFTDataset instances to match downstream expectations
+            combined = {}
+            for split_name, patients in [('train', all_train_patients), ('val', all_val_patients), ('test', all_test_patients)]:
+                ds = TFTDataset(patients)
+                combined[split_name] = {
+                    'dataset': ds,
+                    'patient_count': len(patients),
+                    'feature_dimensions': ds.get_feature_dimensions()
+                }
+            processed_datasets = combined
         else:
             # For smaller datasets, use the original method
             print("📊 Using standard processing for smaller dataset...")
             pipeline_results = data_pipeline.run_complete_pipeline(sample_size=sample_size)
             processed_datasets = {
-                'train': pipeline_results['datasets'].get('train', []),
-                'val': pipeline_results['datasets'].get('validation', []),
-                'test': pipeline_results['datasets'].get('test', [])
+                'train': pipeline_results['datasets'].get('train', {}),
+                'val': pipeline_results['datasets'].get('validation', {}),
+                'test': pipeline_results['datasets'].get('test', {})
             }
         
         pipeline_time = time.time() - start_time
@@ -132,9 +147,15 @@ def run_data_pipeline_optimized(sample_size: int = 12000):
         
         print(f"✅ Data pipeline completed in {pipeline_time:.2f}s")
         print(f"💾 Memory usage: {end_memory - start_memory:.1f}%")
-        print(f"📊 Train samples: {len(processed_datasets['train'])}")
-        print(f"📊 Val samples: {len(processed_datasets['val'])}")
-        print(f"📊 Test samples: {len(processed_datasets['test'])}")
+        # Correctly report patient counts per split
+        def _count(split):
+            try:
+                return split.get('patient_count', len(split.get('dataset', [])))
+            except Exception:
+                return 0
+        print(f"📊 Train samples: {_count(processed_datasets['train'])}")
+        print(f"📊 Val samples: {_count(processed_datasets['val'])}")
+        print(f"📊 Test samples: {_count(processed_datasets['test'])}")
         
         return processed_datasets
         
@@ -257,7 +278,7 @@ def main():
     setup_logging()
     
     # Configuration
-    sample_size = 100  # Test with 100 patients
+    sample_size = 500  # Reduce to 500 patients with stratified split
     
     print(f"🎯 Target: {sample_size} patients")
     print(f"💾 Initial memory usage: {monitor_memory():.1f}%")
@@ -303,9 +324,15 @@ def main():
     print(f"⏱️  Total pipeline time: {total_time:.2f} seconds")
     print(f"💾 Final memory usage: {final_memory:.1f}%")
     print(f"👥 Patients processed: {sample_size}")
-    print(f"📊 Train samples: {len(processed_datasets['train'])}")
-    print(f"📊 Val samples: {len(processed_datasets['val'])}")
-    print(f"📊 Test samples: {len(processed_datasets['test'])}")
+    # Correctly report patient counts per split
+    def _count(split):
+        try:
+            return split.get('patient_count', len(split.get('dataset', [])))
+        except Exception:
+            return 0
+    print(f"📊 Train samples: {_count(processed_datasets['train'])}")
+    print(f"📊 Val samples: {_count(processed_datasets['val'])}")
+    print(f"📊 Test samples: {_count(processed_datasets['test'])}")
     print(f"🏆 Best validation loss: {training_results['best_val_loss']:.4f}")
     print(f"📈 Best epoch: {training_results['best_epoch']}")
     

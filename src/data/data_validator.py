@@ -448,6 +448,142 @@ class DataValidator:
         self.logger.info(f"Temporal split created: {len(split_data['train'])} train, {len(split_data['validation'])} validation, {len(split_data['test'])} test")
         
         return split_data
+
+    # --- New: Patient-level stratified split ensuring positives in each fold ---
+    def _patient_label_flags(self, patient_data: Dict[str, pd.DataFrame]) -> Dict[str, int]:
+        """Compute simple label flags for a patient's raw data.
+
+        Flags:
+          - mortality: 1 if patients.DEATHDATE not null
+          - icu: 1 if encounters/procedures DESCRIPTION contains ICU-like keywords
+          - ventilator: 1 if devices/procedures DESCRIPTION contains ventilator/intubation keywords
+        """
+        flags = {"mortality": 0, "icu": 0, "ventilator": 0}
+
+        # Mortality from patients table
+        if 'patients' in patient_data and not patient_data['patients'].empty:
+            dfp = patient_data['patients']
+            if 'DEATHDATE' in dfp.columns:
+                flags['mortality'] = int(dfp['DEATHDATE'].notna().any())
+
+        # Keywords
+        icu_kw = ['icu', 'intensive care', 'critical care']
+        vent_kw = ['mechanical ventilation', 'ventilator', 'intubation']
+
+        def has_kw(df: pd.DataFrame, col: str, keywords: list[str]) -> bool:
+            if df is None or df.empty or col not in df.columns:
+                return False
+            desc = df[col].astype(str).str.lower()
+            return bool(desc.str.contains('|'.join(map(re.escape, keywords)), case=False, na=False).any())
+
+        if 'encounters' in patient_data:
+            flags['icu'] = int(has_kw(patient_data['encounters'], 'DESCRIPTION', icu_kw)) or flags['icu']
+        if 'procedures' in patient_data:
+            # Procedures can indicate both ICU/vent
+            flags['icu'] = int(has_kw(patient_data['procedures'], 'DESCRIPTION', icu_kw)) or flags['icu']
+            flags['ventilator'] = int(has_kw(patient_data['procedures'], 'DESCRIPTION', vent_kw)) or flags['ventilator']
+        if 'devices' in patient_data:
+            flags['ventilator'] = int(has_kw(patient_data['devices'], 'DESCRIPTION', vent_kw)) or flags['ventilator']
+
+        return flags
+
+    def create_stratified_split(self,
+                                valid_patients: Dict[str, Dict[str, pd.DataFrame]],
+                                test_size: float = 0.1,
+                                validation_size: float = 0.15,
+                                min_pos_per_label: int = 3,
+                                random_state: int = 42) -> Dict[str, Dict[str, Dict[str, pd.DataFrame]]]:
+        """Create a stratified random split guaranteeing positives for key labels in each split.
+
+        This is a pragmatic heuristic split for multi-task labels that ensures
+        at least `min_pos_per_label` positives for mortality/ICU/ventilator in
+        train/validation/test (if available).
+        """
+        rng = np.random.default_rng(random_state)
+        patient_ids = list(valid_patients.keys())
+
+        # Compute flags per patient
+        pid_to_flags = {pid: self._patient_label_flags(valid_patients[pid]) for pid in patient_ids}
+
+        # Buckets
+        pos = {
+            'mortality': [pid for pid, f in pid_to_flags.items() if f['mortality'] == 1],
+            'icu': [pid for pid, f in pid_to_flags.items() if f['icu'] == 1],
+            'ventilator': [pid for pid, f in pid_to_flags.items() if f['ventilator'] == 1],
+        }
+
+        # Target sizes
+        n_total = len(patient_ids)
+        n_test = max(1, int(round(n_total * test_size)))
+        n_val = max(1, int(round(n_total * validation_size)))
+        n_train = max(1, n_total - n_test - n_val)
+
+        train, val, test = set(), set(), set()
+
+        # Helper to allocate positives
+        def allocate(label: str, target_set: set, needed: int):
+            pool = [pid for pid in pos[label] if pid not in train and pid not in val and pid not in test]
+            if not pool:
+                return 0
+            rng.shuffle(pool)
+            take = min(needed, len(pool))
+            target_set.update(pool[:take])
+            return take
+
+        # Ensure each split has minimum positives per label
+        for label in ['mortality', 'icu', 'ventilator']:
+            allocate(label, test, min_pos_per_label)
+            allocate(label, val, min_pos_per_label)
+            allocate(label, train, min_pos_per_label)
+
+        # Fill remaining slots randomly while preserving sizes
+        remaining = [pid for pid in patient_ids if pid not in train and pid not in val and pid not in test]
+        rng.shuffle(remaining)
+
+        def fill(target_set: set, target_size: int):
+            need = max(0, target_size - len(target_set))
+            if need <= 0:
+                return
+            take = remaining[:need]
+            target_set.update(take)
+            del remaining[:need]
+
+        fill(test, n_test)
+        fill(val, n_val)
+        fill(train, n_train)
+
+        # If anything still remains due to rounding, add to train
+        if remaining:
+            train.update(remaining)
+            remaining.clear()
+
+        split_data = {
+            'train': {pid: valid_patients[pid] for pid in train},
+            'validation': {pid: valid_patients[pid] for pid in val},
+            'test': {pid: valid_patients[pid] for pid in test},
+        }
+
+        # Log positive counts per split
+        def count_pos(split: Dict[str, Dict[str, pd.DataFrame]], label: str) -> int:
+            return sum(int(self._patient_label_flags(data)[label] == 1) for data in split.values())
+
+        self.logger.info(
+            "Stratified split created: train %d (m:%d i:%d v:%d), val %d (m:%d i:%d v:%d), test %d (m:%d i:%d v:%d)",
+            len(split_data['train']),
+            count_pos(split_data['train'], 'mortality'),
+            count_pos(split_data['train'], 'icu'),
+            count_pos(split_data['train'], 'ventilator'),
+            len(split_data['validation']),
+            count_pos(split_data['validation'], 'mortality'),
+            count_pos(split_data['validation'], 'icu'),
+            count_pos(split_data['validation'], 'ventilator'),
+            len(split_data['test']),
+            count_pos(split_data['test'], 'mortality'),
+            count_pos(split_data['test'], 'icu'),
+            count_pos(split_data['test'], 'ventilator'),
+        )
+
+        return split_data
     
     def _create_random_split(self, valid_patients: Dict[str, Dict[str, pd.DataFrame]], 
                            test_size: float, validation_size: float) -> Dict[str, Dict[str, Dict[str, pd.DataFrame]]]:

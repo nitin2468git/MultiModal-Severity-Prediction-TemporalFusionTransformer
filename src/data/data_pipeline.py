@@ -113,7 +113,7 @@ class DataPipeline:
         for directory in directories:
             Path(directory).mkdir(parents=True, exist_ok=True)
     
-    def run_complete_pipeline(self, sample_size: Optional[int] = None) -> Dict[str, Any]:
+    def run_complete_pipeline(self, sample_size: Optional[int] = None, start_index: int = 0) -> Dict[str, Any]:
         """
         Run the complete data processing pipeline.
         
@@ -137,7 +137,7 @@ class DataPipeline:
         try:
             # Step 1: Load raw data
             self.logger.info("Step 1: Loading raw Synthea data")
-            raw_data = self._load_raw_data(sample_size=sample_size)
+            raw_data = self._load_raw_data(sample_size=sample_size, start_index=start_index)
             pipeline_results['processing_stats']['raw_data_loaded'] = len(raw_data)
             
             # Step 2: Validate data quality
@@ -146,9 +146,19 @@ class DataPipeline:
             pipeline_results['validation_results'] = validation_results
             pipeline_results['processing_stats']['valid_patients'] = len(valid_patients)
             
-            # Step 3: Create temporal splits
-            self.logger.info("Step 3: Creating temporal splits")
-            split_data = self._create_temporal_splits(valid_patients)
+            # Step 3: Create stratified splits (fallback to temporal if needed)
+            self.logger.info("Step 3: Creating stratified splits with positives in each fold")
+            try:
+                split_data = self.data_validator.create_stratified_split(
+                    valid_patients,
+                    test_size=0.1,
+                    validation_size=0.15,
+                    min_pos_per_label=3,
+                    random_state=42,
+                )
+            except Exception as e:
+                self.logger.warning(f"Stratified split failed ({e}); falling back to temporal split")
+                split_data = self._create_temporal_splits(valid_patients)
             pipeline_results['processing_stats']['splits_created'] = {
                 'train': len(split_data['train']),
                 'validation': len(split_data['validation']),
@@ -177,7 +187,7 @@ class DataPipeline:
         
         return pipeline_results
     
-    def _load_raw_data(self, sample_size: Optional[int] = None) -> Dict[str, Dict[str, pd.DataFrame]]:
+    def _load_raw_data(self, sample_size: Optional[int] = None, start_index: int = 0) -> Dict[str, Dict[str, pd.DataFrame]]:
         """
         Load raw data from Synthea dataset.
         
@@ -190,10 +200,10 @@ class DataPipeline:
         # Identify COVID-19 patients
         covid19_patients = self.synthea_loader.identify_covid19_patients()
         
-        # If sample_size is provided, take only that many patients
+        # If sample_size is provided, take only that many patients with optional start index
         if sample_size is not None:
-            covid19_patients = list(covid19_patients)[:sample_size]
-            self.logger.info(f"Using sample of {sample_size} patients for testing")
+            covid19_patients = list(covid19_patients)[start_index:start_index + sample_size]
+            self.logger.info(f"Using sample of {len(covid19_patients)} patients for testing (start_index={start_index})")
         
         # Get data for COVID-19 patients
         all_patient_data = {}
