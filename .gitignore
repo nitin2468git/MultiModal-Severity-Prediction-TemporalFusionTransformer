@@ -297,3 +297,6 @@ activate_env.sh
 tft_architecture.md
 tft_design_doc.md
 tft_paper_layout.md
+
+# Ignore local training script
+train_optimized_simple.py
