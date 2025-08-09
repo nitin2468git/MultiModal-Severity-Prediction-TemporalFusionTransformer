@@ -304,3 +304,6 @@ train_optimized_simple.py
 # Ignore editor metadata
 .cursor/
 .cursor/rules
+
+# Ignore educational EDA materials
+phase_1_eda/
