@@ -300,3 +300,7 @@ tft_paper_layout.md
 
 # Ignore local training script
 train_optimized_simple.py
+
+# Ignore editor metadata
+.cursor/
+.cursor/rules
